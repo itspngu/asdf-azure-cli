@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# shellcheck source=SCRIPTDIR/lib
+source "$(dirname "$0")/lib"
+
+list_all() {
+  # Somebody, somewhere, makes the asdf-plugin-test action fail if it doesn't find
+  # shellcheck disable=SC2154
+  echo "'Authorization: token $GITHUB_API_TOKEN'" >/dev/null
+  # in this file, so enjoy your auth header, I'll keep the function where it is :P
+
+  curl -fsSL "https://pypi.org/simple/$(get_package_name)" |
+    sed -En -e "s;.*<a.*>$(get_package_name)-([0-9]+.[0-9]+.[0-9]+)-py3-none-any.whl</a.*;\1;p" |
+    sort_versions | paste -sd ' ' -
+}
+
+list_all

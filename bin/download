@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+: "${ASDF_INSTALL_VERSION:?"Missing ASDF_INSTALL_VERSION"}"
+: "${ASDF_DOWNLOAD_PATH:?"Missing ASDF_DOWNLOAD_PATH"}"
+
+# shellcheck source=SCRIPTDIR/lib
+. "$(dirname "$0")/lib"
+
+download() {
+  curl -fsSL "https://pypi.org/simple/$(get_package_name)" |
+    sed -En -e "s;.*(https://files.pythonhosted.org/packages/.*/$(get_release_filename))#.*;\1;p" |
+    xargs -n1 curl -fsSL -o "$ASDF_DOWNLOAD_PATH/$(get_release_filename)"
+  exit $?
+}
+
+download

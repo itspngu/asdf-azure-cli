@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+: "${ASDF_INSTALL_PATH:?"Missing ASDF_INSTALL_PATH"}"
+: "${ASDF_DOWNLOAD_PATH:?"Missing ASDF_DOWNLOAD_PATH"}"
+: "${ASDF_INSTALL_TYPE:?"asdf-azure-cli supports release installs only"}"
+: "${ASDF_INSTALL_VERSION:?"Missing ASDF_INSTALL_VERSION"}"
+
+# shellcheck source=SCRIPTDIR/lib
+source "$(dirname "$0")/lib"
+
+install() {
+  if [ ! -d "$ASDF_DOWNLOAD_PATH" ]; then
+    # shellcheck source=SCRIPTDIR/download
+    source "$(dirname "$0")/download" || (
+      echo "Downloading azure-cli $ASDF_INSTALL_VERSION failed" 1>&2
+      exit 1
+    )
+  fi
+
+  mkdir -p "$ASDF_INSTALL_PATH/bin" &&
+    python3 -m venv "$ASDF_INSTALL_PATH/bin/venv" &&
+    "$ASDF_INSTALL_PATH/bin/venv/bin/python3" -m pip install "$ASDF_DOWNLOAD_PATH/$(get_release_filename)" &&
+    cat <<EOF >>"$ASDF_INSTALL_PATH/bin/az" &&
+#!/usr/bin/env bash
+$ASDF_INSTALL_PATH/bin/venv/bin/python3 -m azure.cli "\$@"
+EOF
+    chmod +x "$ASDF_INSTALL_PATH/bin/az" &&
+    find "$ASDF_DOWNLOAD_PATH" -delete
+
+  if [ -x "$ASDF_INSTALL_PATH/bin/az" ]; then
+    echo "azure-cli $ASDF_INSTALL_VERSION has been installed"
+    exit 0
+  else
+    echo "An error ocurred while installing azure-cli $ASDF_INSTALL_VERSION" 1>&2
+    find "$ASDF_INSTALL_PATH" -delete
+    exit 1
+  fi
+}
+
+install
